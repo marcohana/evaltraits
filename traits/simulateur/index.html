@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="robots" content="noindex, nofollow">
+<meta name="referrer" content="no-referrer">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Simulateur de classe · Traits du leader</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="../config.js" onerror="void 0"></script>
+<style>
+:root {
+  --paper: #F2F4F7; --surface: #FFFFFF; --ink: #1B2230; --muted: #5E6878; --line: #DDE2E8; --line-strong: #C3CAD4;
+  --accent: #12604F; --accent-hover: #0D4E40; --accent-ink: #FFFFFF; --accent-soft: #E0EEE9;
+  --danger: #B3261E; --danger-soft: #FBEAE8; --warn: #85590A; --warn-soft: #FFF2D4;
+  --font: 'Schibsted Grotesk', 'Segoe UI', system-ui, -apple-system, sans-serif;
+  box-sizing: border-box; color-scheme: light;
+  padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #11151B; --surface: #181E26; --ink: #E6EAF0; --muted: #98A2B1; --line: #28303B; --line-strong: #39434F;
+    --accent: #5BC2A5; --accent-hover: #7BD3BA; --accent-ink: #0B211B; --accent-soft: #1A352E;
+    --danger: #F0857C; --danger-soft: #3A1E1C; --warn: #F2C46B; --warn-soft: #3A2E14; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #11151B; --surface: #181E26; --ink: #E6EAF0; --muted: #98A2B1; --line: #28303B; --line-strong: #39434F;
+  --accent: #5BC2A5; --accent-hover: #7BD3BA; --accent-ink: #0B211B; --accent-soft: #1A352E;
+  --danger: #F0857C; --danger-soft: #3A1E1C; --warn: #F2C46B; --warn-soft: #3A2E14; color-scheme: dark;
+}
+*, *::before, *::after { box-sizing: inherit; }
+html { height: 100%; }
+body { margin: 0; min-height: 100%; background: var(--paper); color: var(--ink); font-family: var(--font); font-size: 15px; line-height: 1.5; -webkit-font-smoothing: antialiased; }
+button, input { font: inherit; color: inherit; }
+[hidden] { display: none !important; }
+.num { font-variant-numeric: tabular-nums; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.wrap { max-width: 980px; margin: 0 auto; padding: 32px 20px 64px; }
+.head { display: flex; align-items: center; gap: 14px; margin-bottom: 8px; }
+.head h1 { font-size: 26px; line-height: 1.2; margin: 0; letter-spacing: -0.012em; }
+.lead { color: var(--muted); margin: 0 0 24px; max-width: 70ch; }
+.seal-frame { fill: none; stroke: var(--line-strong); stroke-width: 1.5; }
+.seal-shape { fill: var(--accent); stroke: var(--accent); stroke-width: 1.5; stroke-linejoin: round; }
+.grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 20px 20px 18px; }
+.card.full { grid-column: 1 / -1; }
+.card h2 { font-size: 17px; margin: 0 0 4px; }
+.card > p { color: var(--muted); font-size: 14px; margin: 0 0 14px; }
+.fields { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px 12px; margin-bottom: 14px; }
+.fields.two { grid-template-columns: 1fr 140px; }
+.field span { display: block; font-size: 13px; font-weight: 600; margin-bottom: 5px; }
+.input { width: 100%; height: 40px; padding: 0 12px; border: 1px solid var(--line-strong); border-radius: 7px; background: var(--surface); }
+.input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+.check-line { display: flex; gap: 10px; align-items: flex-start; font-size: 14px; color: var(--muted); margin: 0 0 14px; }
+.check-line input { width: 17px; height: 17px; margin-top: 2px; accent-color: var(--accent); }
+.btns { display: flex; flex-wrap: wrap; gap: 8px; }
+.btn { display: inline-flex; align-items: center; justify-content: center; height: 40px; padding: 0 16px; border-radius: 7px; border: 1px solid transparent; font-size: 14px; font-weight: 600; cursor: pointer; }
+.btn-primary { background: var(--accent); color: var(--accent-ink); }
+.btn-primary:hover { background: var(--accent-hover); }
+.btn-secondary { background: var(--surface); border-color: var(--line-strong); }
+.btn-secondary:hover { background: var(--paper); }
+.btn-danger { background: var(--danger); color: #fff; }
+.btn:disabled { opacity: .45; cursor: not-allowed; }
+.status { font-size: 14px; border-radius: 8px; padding: 10px 12px; margin-top: 12px; }
+.status.ok { background: var(--accent-soft); color: var(--accent); }
+.status.bad { background: var(--danger-soft); color: var(--danger); }
+.status.info { background: var(--paper); color: var(--muted); }
+.progress { height: 8px; background: var(--paper); border-radius: 999px; overflow: hidden; margin: 6px 0 2px; }
+.progress div { height: 100%; width: 0; background: var(--accent); transition: width .3s; }
+.prow { margin-top: 12px; font-size: 13.5px; }
+.prow .top { display: flex; justify-content: space-between; color: var(--muted); }
+.prow .top b { color: var(--ink); }
+.stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin: 6px 0 16px; }
+.stat { border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; }
+.stat dt { font-size: 12.5px; color: var(--muted); }
+.stat dd { margin: 2px 0 0; font-size: 22px; font-weight: 700; line-height: 1.2; }
+.stat.bad dd { color: var(--danger); }
+table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+th { text-align: left; font-weight: 500; color: var(--muted); padding: 7px 8px; border-bottom: 1px solid var(--line); }
+td { padding: 7px 8px; border-bottom: 1px solid var(--line); }
+td.r, th.r { text-align: right; }
+.log { margin-top: 14px; max-height: 220px; overflow: auto; border: 1px solid var(--line); border-radius: 10px; }
+.log p { margin: 0; padding: 7px 10px; border-bottom: 1px solid var(--line); font-size: 13px; }
+.log p:last-child { border-bottom: 0; }
+.log .n { font-weight: 700; color: var(--danger); margin-right: 6px; }
+.empty { color: var(--muted); font-size: 13.5px; padding: 10px; }
+.warn { background: var(--warn-soft); color: var(--warn); border-radius: 10px; padding: 12px 14px; font-size: 14px; margin-bottom: 18px; }
+.stopbar { position: sticky; bottom: 12px; display: flex; justify-content: center; margin-top: 16px; }
+@media (max-width: 760px) { .grid { grid-template-columns: 1fr; } .fields, .fields.two { grid-template-columns: 1fr 1fr; } .stats { grid-template-columns: 1fr 1fr; } }
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { transition: none !important; } }
+</style>
+</head>
+<body>
+<main class="wrap">
+  <div class="head">
+    <svg width="40" height="40" viewBox="0 0 100 100" aria-hidden="true"><polygon class="seal-frame" points="50,6 75.9,14.4 91.8,36.4 91.8,63.6 75.9,85.6 50,94 24.1,85.6 8.2,63.6 8.2,36.4 24.1,14.4"/><polygon class="seal-shape" points="50,24 68,25 78,41 70,58 62,72 50,70 35,74 28,58 30,41 38,31"/></svg>
+    <h1>Simulateur de classe</h1>
+  </div>
+  <p class="lead">Joue des étudiants fictifs sur votre vrai serveur, par les mêmes voies que la page étudiants : inscription, mot de passe, auto-évaluation, évaluation des camarades et actualisation automatique des compteurs.</p>
+  <div class="warn">Utilisez un univers dédié aux tests, par exemple « Test 200 », et supprimez-le ensuite. N’envoyez jamais les rapports de cet univers : utilisez seulement « Aperçu du rapport ».</div>
+
+  <div class="grid">
+    <section class="card full">
+      <h2>Connexion à la session</h2>
+      <p>L’adresse du serveur est celle de votre fichier config.js (elle se remplit seule si le simulateur est déposé dans le dossier traits).</p>
+      <div class="fields two">
+        <label class="field"><span>Adresse du serveur Apps Script</span><input class="input" id="api" placeholder="https://script.google.com/macros/s/…/exec" spellcheck="false" autocomplete="off"></label>
+        <label class="field"><span>Code de session</span><input class="input num" id="code" inputmode="numeric" maxlength="4" placeholder="0000" autocomplete="off"></label>
+      </div>
+      <div class="btns"><button class="btn btn-secondary" id="btnCheck" type="button">Vérifier la session</button></div>
+      <div id="checkOut"></div>
+    </section>
+
+    <section class="card">
+      <h2>1. Inscriptions</h2>
+      <p>Les inscriptions doivent être ouvertes dans la console. Vous ajoutez ensuite les inscrits à la liste, comme en classe.</p>
+      <div class="fields">
+        <label class="field"><span>Étudiants</span><input class="input num" id="nStud" type="number" min="1" max="500" value="200"></label>
+        <label class="field"><span>Durée (minutes)</span><input class="input num" id="regMin" type="number" min="0.01" step="0.5" value="3"></label>
+        <label class="field"><span>Envois simultanés</span><input class="input num" id="conc" type="number" min="1" max="50" value="10"></label>
+      </div>
+      <div class="btns">
+        <button class="btn btn-primary" id="btnReg" type="button">Lancer les inscriptions</button>
+        <button class="btn btn-secondary" id="btnCopy" type="button">Copier la liste pour l’importer</button>
+      </div>
+      <div id="regOut" class="status info">Aucune identité fictive pour cette session.</div>
+      <div class="prow"><div class="top"><span>Inscriptions envoyées</span><b class="num" id="regTxt">0 / 0</b></div><div class="progress"><div id="regBar"></div></div></div>
+    </section>
+
+    <section class="card">
+      <h2>2. Évaluations</h2>
+      <p>L’accès des participants doit être ouvert, et les étudiants fictifs présents dans la liste de l’univers.</p>
+      <div class="fields">
+        <label class="field"><span>Durée (minutes)</span><input class="input num" id="evMin" type="number" min="0.01" step="0.5" value="8"></label>
+        <label class="field"><span>Camarades min.</span><input class="input num" id="pMin" type="number" min="0" max="20" value="3"></label>
+        <label class="field"><span>Camarades max.</span><input class="input num" id="pMax" type="number" min="0" max="20" value="7"></label>
+      </div>
+      <label class="check-line"><input type="checkbox" id="poll" checked><span>Simuler l’actualisation automatique des compteurs, toutes les 20 secondes pour chaque étudiant actif, comme la vraie page</span></label>
+      <div class="btns"><button class="btn btn-primary" id="btnEval" type="button">Lancer les évaluations</button></div>
+      <div class="prow"><div class="top"><span>Auto-évaluations</span><b class="num" id="selfTxt">0 / 0</b></div><div class="progress"><div id="selfBar"></div></div></div>
+      <div class="prow"><div class="top"><span>Évaluations de camarades</span><b class="num" id="peerTxt">0 / 0</b></div><div class="progress"><div id="peerBar"></div></div></div>
+    </section>
+
+    <section class="card full">
+      <h2>Suivi en direct</h2>
+      <p id="phase">En attente.</p>
+      <dl class="stats">
+        <div class="stat"><dt>Requêtes réussies</dt><dd class="num" id="sOk">0</dd></div>
+        <div class="stat" id="stErr"><dt>Erreurs</dt><dd class="num" id="sErr">0</dd></div>
+        <div class="stat"><dt>Temps de réponse médian</dt><dd class="num" id="sMed">—</dd></div>
+        <div class="stat"><dt>Temps de réponse lent (95 %)</dt><dd class="num" id="sP95">—</dd></div>
+      </dl>
+      <table><thead><tr><th>Action</th><th class="r">Réussies</th><th class="r">Erreurs</th><th class="r">Nouveaux essais</th><th class="r">Médiane</th><th class="r">Maximum</th></tr></thead><tbody id="tbl"></tbody></table>
+      <div class="log" id="log"><p class="empty">Aucune erreur.</p></div>
+    </section>
+  </div>
+  <div class="stopbar"><button class="btn btn-danger" id="btnStop" type="button" hidden>Arrêter la simulation</button></div>
+</main>
+
+<script>
+(function () {
+  'use strict';
+  var SCALE = typeof window.SIM_SCALE === 'number' ? window.SIM_SCALE : 1;   // accélération (tests)
+  var $ = function (s) { return document.querySelector(s); };
+  var KEYS = ['expression', 'perspicace', 'confiance_soi', 'assurance', 'perseverance', 'determination', 'confiance', 'fiabilite', 'amabilite', 'ouverture'];
+  var LABELS = { session: 'Consulter la session', register: 'Inscription', checkPin: 'Mot de passe', submitSelf: 'Auto-évaluation', submitPeer: 'Évaluation d’un camarade', regInfo: 'Infos d’inscription' };
+  var PRENOMS = ['Léa', 'Hugo', 'Chloé', 'Lucas', 'Emma', 'Louis', 'Inès', 'Gabriel', 'Jade', 'Arthur', 'Manon', 'Nathan', 'Camille', 'Jules', 'Sarah', 'Adam', 'Zoé', 'Raphaël', 'Lina', 'Théo',
+    'Alice', 'Tom', 'Anaïs', 'Maxime', 'Clara', 'Yanis', 'Lou', 'Ethan', 'Eva', 'Noah', 'Rose', 'Karim', 'Mila', 'Samuel', 'Nina', 'Victor', 'Juliette', 'Mehdi', 'Anna', 'Paul',
+    'Sofia', 'Antoine', 'Maëlys', 'Rayan', 'Louise', 'Enzo', 'Lucie', 'Amine', 'Margaux', 'Baptiste', 'Yasmine', 'Clément', 'Élise', 'Valentin', 'Salomé', 'Mathis', 'Océane', 'Axel', 'Aya', 'Quentin'];
+  var NOMS = ['MARTIN', 'BERNARD', 'DUBOIS', 'THOMAS', 'ROBERT', 'RICHARD', 'PETIT', 'DURAND', 'LEROY', 'MOREAU', 'SIMON', 'LAURENT', 'LEFÈVRE', 'MICHEL', 'GARCIA', 'DAVID', 'BERTRAND', 'ROUX', 'VINCENT', 'FOURNIER',
+    'MOREL', 'GIRARD', 'ANDRÉ', 'MERCIER', 'DUPONT', 'LAMBERT', 'BONNET', 'FRANÇOIS', 'MARTINEZ', 'LEGRAND', 'GARNIER', 'FAURE', 'ROUSSEAU', 'BLANC', 'GUÉRIN', 'MULLER', 'HENRY', 'ROUSSEL', 'NICOLAS', 'PERRIN',
+    'MORIN', 'MATHIEU', 'CLÉMENT', 'GAUTHIER', 'DUMONT', 'LOPEZ', 'FONTAINE', 'CHEVALIER', 'ROBIN', 'MASSON', 'HADDAD', 'BENALI', 'NGUYEN', 'DIALLO', 'KHALDI', 'MENDES', 'SANCHEZ', 'OLIVIER', 'MARCHAND', 'BOYER'];
+
+  // ---------- Outils ----------
+  function norm(s) { return String(s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim(); }
+  function slug(s) { return norm(s).replace(/[^a-z0-9]+/g, ''); }
+  function rnd(a, b) { return a + Math.random() * (b - a); }
+  function gauss() { var u = 1 - Math.random(), v = Math.random(); return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v); }
+  function clamp(v) { return Math.max(1, Math.min(5, Math.round(v))); }
+  function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms * SCALE); }); }
+  function hex(n) { var a = new Uint8Array(n); crypto.getRandomValues(a); return Array.prototype.map.call(a, function (b) { return ('0' + b.toString(16)).slice(-2); }).join(''); }
+  function esc(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+  function codeVal() { return $('#code').value.replace(/\D/g, '').slice(0, 4); }
+  function storeKey() { return 'traits_sim_' + codeVal(); }
+  function loadIds() { try { return JSON.parse(localStorage.getItem(storeKey()) || 'null'); } catch (e) { return null; } }
+  function saveIds(ids) { try { localStorage.setItem(storeKey(), JSON.stringify(ids)); } catch (e) { } }
+
+  $('#api').value = (typeof window.TRAITS_API_URL === 'string' && /^https:\/\//.test(window.TRAITS_API_URL)) ? window.TRAITS_API_URL : (localStorage.getItem('traits_sim_api') || '');
+  $('#code').value = localStorage.getItem('traits_sim_code') || '';
+  $('#code').addEventListener('input', function () { this.value = codeVal(); localStorage.setItem('traits_sim_code', this.value); refreshIds(); });
+  $('#api').addEventListener('change', function () { localStorage.setItem('traits_sim_api', this.value.trim()); });
+
+  // ---------- Statistiques ----------
+  var stats, errors, running = false, stopped = false;
+  function resetStats() { stats = {}; errors = {}; paintStats(); }
+  function st(a) { return stats[a] || (stats[a] = { ok: 0, err: 0, retry: 0, t: [] }); }
+  function pct(arr, q) { if (!arr.length) return null; var b = arr.slice().sort(function (x, y) { return x - y; }); return b[Math.min(b.length - 1, Math.floor(q * b.length))]; }
+  function ms(v) { return v == null ? '—' : (v >= 1000 ? (v / 1000).toFixed(1).replace('.', ',') + ' s' : Math.round(v) + ' ms'); }
+  var paintTimer = null;
+  function paintStats() {
+    if (paintTimer) return;
+    paintTimer = setTimeout(function () {
+      paintTimer = null;
+      var all = [], ok = 0, err = 0;
+      Object.keys(stats).forEach(function (a) { all = all.concat(stats[a].t); ok += stats[a].ok; err += stats[a].err; });
+      $('#sOk').textContent = ok; $('#sErr').textContent = err; $('#stErr').className = 'stat' + (err ? ' bad' : '');
+      $('#sMed').textContent = ms(pct(all, 0.5)); $('#sP95').textContent = ms(pct(all, 0.95));
+      $('#tbl').innerHTML = Object.keys(stats).map(function (a) {
+        var s = stats[a];
+        return '<tr><td>' + (LABELS[a] || a) + '</td><td class="r num">' + s.ok + '</td><td class="r num">' + s.err + '</td><td class="r num">' + s.retry + '</td><td class="r num">' + ms(pct(s.t, 0.5)) + '</td><td class="r num">' + ms(s.t.length ? Math.max.apply(null, s.t) : null) + '</td></tr>';
+      }).join('') || '<tr><td colspan="6" class="empty">Aucune requête pour l’instant.</td></tr>';
+      var keys = Object.keys(errors);
+      $('#log').innerHTML = keys.length ? keys.sort(function (x, y) { return errors[y] - errors[x]; }).map(function (m) { return '<p><span class="n num">' + errors[m] + ' ×</span>' + esc(m) + '</p>'; }).join('') : '<p class="empty">Aucune erreur.</p>';
+    }, 250);
+  }
+
+  // ---------- Appels au serveur (avec limite d'envois simultanés) ----------
+  var slots = 10, active = 0, queue = [];
+  function acquire() { return new Promise(function (r) { if (active < slots) { active++; r(); } else queue.push(r); }); }
+  function release() { active--; if (queue.length) { active++; queue.shift()(); } }
+  function call(action, args, attempt) {
+    attempt = attempt || 0;
+    if (stopped) return Promise.reject(new Error('Simulation arrêtée.'));
+    var s = st(action);
+    return acquire().then(function () {
+      var t0 = performance.now();
+      return fetch($('#api').value.trim(), {
+        method: 'POST', redirect: 'follow', headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({ action: action, args: args })
+      }).then(function (r) {
+        if (!r.ok) throw new Error('Réponse HTTP ' + r.status + ' du serveur.');
+        return r.json();
+      }, function () { throw new Error('Serveur injoignable (réseau ou adresse incorrecte).'); })
+        .then(function (res) {
+          release(); s.t.push(performance.now() - t0);
+          if (res.ok) { s.ok++; paintStats(); return res.data; }
+          if (res.retry && attempt < 2) { s.retry++; paintStats(); return sleep(1500 + attempt * 1500).then(function () { return call(action, args, attempt + 1); }); }
+          throw new Error(res.error || 'Erreur inconnue.');
+        }, function (e) { release(); s.t.push(performance.now() - t0); throw e; });
+    }).catch(function (e) {
+      if (!/arrêtée/.test(e.message) && !e.counted) { s.err++; errors[(LABELS[action] || action) + ' : ' + e.message] = (errors[(LABELS[action] || action) + ' : ' + e.message] || 0) + 1; e.counted = true; paintStats(); }
+      throw e;
+    });
+  }
+
+  // ---------- Identités fictives ----------
+  function makeIds(n) {
+    var ids = [], used = {}, tries = 0;
+    while (ids.length < n && tries < n * 50) {
+      tries++;
+      var pr = PRENOMS[Math.floor(Math.random() * PRENOMS.length)], no = NOMS[Math.floor(Math.random() * NOMS.length)];
+      if (used[pr + no]) continue;
+      used[pr + no] = true;
+      var i = ids.length + 1, bias = -0.2 + 0.45 * gauss(), lvl = [];
+      for (var k = 0; k < 10; k++) lvl.push(3.6 + 0.45 * gauss());
+      ids.push({ prenom: pr, nom: no, email: slug(pr) + '.' + slug(no) + '.' + ('00' + i).slice(-3) + '@simulation.invalid', pin: ('0' + Math.floor(Math.random() * 100)).slice(-2),
+        tok: hex(16), bias: bias, lvl: lvl, reg: false, self: false, peers: [] });
+    }
+    return ids;
+  }
+  function refreshIds() {
+    var ids = loadIds(), out = $('#regOut');
+    if (!codeVal() || !ids) { out.className = 'status info'; out.textContent = 'Aucune identité fictive pour cette session.'; paintProgress(); return; }
+    var nReg = ids.filter(function (x) { return x.reg; }).length;
+    out.className = 'status info';
+    out.textContent = ids.length + ' identités fictives mémorisées pour la session ' + codeVal() + ' (' + nReg + ' inscrites). Elles servent aussi à la phase 2.';
+    paintProgress();
+  }
+  function paintProgress() {
+    var ids = loadIds() || [], n = ids.length;
+    var reg = ids.filter(function (x) { return x.reg; }).length, self = ids.filter(function (x) { return x.self; }).length;
+    var peers = ids.reduce(function (s, x) { return s + x.peers.length; }, 0), target = ids.reduce(function (s, x) { return s + (x.target || 0); }, 0);
+    $('#regTxt').textContent = reg + ' / ' + n; $('#regBar').style.width = (n ? reg / n * 100 : 0) + '%';
+    $('#selfTxt').textContent = self + ' / ' + n; $('#selfBar').style.width = (n ? self / n * 100 : 0) + '%';
+    $('#peerTxt').textContent = peers + ' / ' + (target || '…'); $('#peerBar').style.width = (target ? Math.min(100, peers / target * 100) : 0) + '%';
+  }
+
+  // ---------- Vérification ----------
+  function checkInputs() {
+    var api = $('#api').value.trim();
+    if (!/^https:\/\/script\.google\.com\/macros\/s\/[^/]+\/exec\/?$/.test(api)) { showCheck('bad', 'L’adresse du serveur doit commencer par https://script.google.com/macros/s/ et se terminer par /exec.'); return false; }
+    if (codeVal().length !== 4) { showCheck('bad', 'Le code de session comporte 4 chiffres.'); return false; }
+    localStorage.setItem('traits_sim_api', api);
+    return true;
+  }
+  function showCheck(kind, msg) { $('#checkOut').innerHTML = '<div class="status ' + kind + '">' + esc(msg) + '</div>'; }
+  $('#btnCheck').addEventListener('click', function () {
+    if (!checkInputs()) return;
+    var b = this; b.disabled = true; showCheck('info', 'Vérification…');
+    Promise.all([
+      call('regInfo', [codeVal()]).then(function (d) { return { ok: true, nom: d.nom }; }, function (e) { return { ok: false, msg: e.message }; }),
+      call('session', [codeVal()]).then(function (d) { return { ok: true, nom: d.nom, n: d.participants.length }; }, function (e) { return { ok: false, msg: e.message }; })
+    ]).then(function (r) {
+      b.disabled = false;
+      var nom = (r[0].ok && r[0].nom) || (r[1].ok && r[1].nom);
+      if (!nom) { showCheck('bad', r[1].msg || r[0].msg); return; }
+      showCheck('ok', 'Session « ' + nom + ' » trouvée. Inscriptions ' + (r[0].ok ? 'ouvertes' : 'fermées') + ', accès des participants ' + (r[1].ok ? 'ouvert (' + r[1].n + ' participants dans la liste)' : 'fermé') + '.');
+    });
+  });
+
+  // ---------- Déroulement ----------
+  function begin(label) {
+    running = true; stopped = false; slots = Math.max(1, Math.min(50, parseInt($('#conc').value, 10) || 10));
+    $('#btnStop').hidden = false; $('#btnReg').disabled = true; $('#btnEval').disabled = true;
+    $('#phase').textContent = label;
+  }
+  function end(label) {
+    running = false;
+    $('#btnStop').hidden = true; $('#btnReg').disabled = false; $('#btnEval').disabled = false;
+    $('#phase').textContent = label;
+    paintStats(); paintProgress();
+  }
+  $('#btnStop').addEventListener('click', function () { stopped = true; $('#phase').textContent = 'Arrêt demandé : les requêtes en cours se terminent…'; });
+
+  // Phase 1 : inscriptions
+  $('#btnReg').addEventListener('click', function () {
+    if (running || !checkInputs()) return;
+    var n = Math.max(1, Math.min(500, parseInt($('#nStud').value, 10) || 200)), dur = Math.max(0.01, parseFloat(String($('#regMin').value).replace(',', '.')) || 3) * 60000;
+    var ids = loadIds();
+    if (!ids || ids.length !== n) {
+      if (ids && !window.confirm('Des identités fictives existent déjà pour cette session (' + ids.length + '). Les remplacer par ' + n + ' nouvelles ?')) return;
+      ids = makeIds(n); saveIds(ids);
+    }
+    if (!window.confirm('Envoyer ' + ids.filter(function (x) { return !x.reg; }).length + ' inscriptions fictives à la session ' + codeVal() + ', réparties sur ' + (dur / 60000).toLocaleString('fr-FR') + ' min ?')) return;
+    resetStats(); begin('Phase 1 : inscriptions en cours…');
+    var todo = ids.filter(function (x) { return !x.reg; });
+    var jobs = todo.map(function (x, i) {
+      return sleep(dur / SCALE * (i / Math.max(1, todo.length)) + rnd(0, 800)).then(function () {
+        if (stopped) return;
+        return call('register', [codeVal(), { prenom: x.prenom, nom: x.nom, email: x.email, pin: x.pin }]).then(function () {
+          x.reg = true; saveIds(ids); paintProgress();
+        }, function (e) { if (/déjà inscrite/.test(e.message)) { x.reg = true; saveIds(ids); paintProgress(); } });
+      });
+    });
+    Promise.all(jobs).then(function () {
+      var ok = ids.filter(function (x) { return x.reg; }).length;
+      end(stopped ? 'Phase 1 arrêtée : ' + ok + ' inscriptions enregistrées.' : 'Phase 1 terminée : ' + ok + ' inscriptions enregistrées. Dans la console, ajoutez-les à la liste, ouvrez l’accès des participants, puis lancez la phase 2.');
+    });
+  });
+
+  // Copier la liste (pour l'importer au lieu de passer par l'inscription)
+  $('#btnCopy').addEventListener('click', function () {
+    if (codeVal().length !== 4) { showCheck('bad', 'Saisissez d’abord le code de session.'); return; }
+    var n = Math.max(1, Math.min(500, parseInt($('#nStud').value, 10) || 200)), ids = loadIds();
+    if (!ids || ids.length !== n) { ids = makeIds(n); saveIds(ids); refreshIds(); }
+    var tsv = 'Prénom\tNom\tEmail\n' + ids.map(function (x) { return x.prenom + '\t' + x.nom + '\t' + x.email; }).join('\n');
+    var done = function () { $('#regOut').className = 'status ok'; $('#regOut').textContent = ids.length + ' lignes copiées. Dans la console : « Importer une liste », puis « Coller depuis Excel ». Sans inscription, les étudiants fictifs n’auront pas de mot de passe.'; };
+    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(tsv).then(done, function () { window.prompt('Copiez la liste :', tsv); });
+    else window.prompt('Copiez la liste :', tsv);
+  });
+
+  // Phase 2 : évaluations
+  $('#btnEval').addEventListener('click', function () {
+    if (running || !checkInputs()) return;
+    var ids = loadIds();
+    if (!ids || !ids.length) { showCheck('bad', 'Aucune identité fictive pour cette session : lancez d’abord les inscriptions, ou copiez la liste pour l’importer.'); return; }
+    var dur = Math.max(0.01, parseFloat(String($('#evMin').value).replace(',', '.')) || 8) * 60000;
+    var pMin = Math.max(0, parseInt($('#pMin').value, 10) || 0), pMax = Math.max(pMin, parseInt($('#pMax').value, 10) || pMin), poll = $('#poll').checked;
+    resetStats(); begin('Phase 2 : lecture de la session…');
+    call('session', [codeVal()]).then(function (sess) {
+      var byName = {};
+      sess.participants.forEach(function (p) { byName[norm(p.prenom) + '|' + norm(p.nom)] = p; });
+      var mine = ids.filter(function (x) { var p = byName[norm(x.prenom) + '|' + norm(x.nom)]; if (p) { x.pid = p.id; x.hasPin = p.hasPin; } return !!p; });
+      if (!mine.length) { end('Aucun étudiant fictif n’est dans la liste de l’univers. Ajoutez d’abord les inscriptions dans la console (ou importez la liste copiée).'); return; }
+      var left = mine.filter(function (x) { return !x.self || x.target == null || x.peers.length < x.target; });
+      if (!left.length) { end('Phase 2 déjà terminée pour tous les étudiants fictifs de cette session. Pour recommencer, utilisez une nouvelle session de test.'); return; }
+      if (!window.confirm('Simuler ' + mine.length + ' étudiants fictifs (auto-évaluation puis ' + pMin + ' à ' + pMax + ' camarades chacun), répartis sur ' + (dur / 60000).toLocaleString('fr-FR') + ' min ?')) { end('Phase 2 annulée.'); return; }
+      var snap = sess.participants.filter(function (p) { return mine.some(function (x) { return x.pid === p.id; }); });
+      var byPid = {}; mine.forEach(function (x) { byPid[x.pid] = x; if (x.target == null) x.target = Math.floor(rnd(pMin, pMax + 1)); });
+      saveIds(ids); paintProgress();
+      $('#phase').textContent = 'Phase 2 : ' + mine.length + ' étudiants fictifs en cours…';
+      var jobs = mine.map(function (x) {
+        return sleep(rnd(0, dur / SCALE)).then(function () { return student(x, snap, byPid, poll); }).then(function () { saveIds(ids); paintProgress(); }, function () { saveIds(ids); paintProgress(); });
+      });
+      return Promise.all(jobs).then(function () {
+        var self = ids.filter(function (x) { return x.self; }).length, peers = ids.reduce(function (s, x) { return s + x.peers.length; }, 0);
+        end((stopped ? 'Phase 2 arrêtée : ' : 'Phase 2 terminée : ') + self + ' auto-évaluations et ' + peers + ' évaluations de camarades enregistrées.');
+      });
+    }).catch(function (e) { end('Phase 2 impossible : ' + e.message); });
+  });
+
+  // Un étudiant fictif : consulte la session, saisit son mot de passe, s'auto-évalue, puis évalue des camarades
+  function student(x, snap, byPid, poll) {
+    var alive = true, timer = null;
+    function startPolling() {
+      if (!poll) return;
+      timer = setInterval(function () {
+        if (!alive || stopped) return;
+        call('session', [codeVal()]).then(function (s) {
+          s.participants.forEach(function (p) { snap.forEach(function (q) { if (q.id === p.id) { q.recues = p.recues; q.ferme = p.ferme; } }); });
+        }).catch(function () { });
+      }, 20000 * SCALE);
+    }
+    function finish() { alive = false; if (timer) clearInterval(timer); }
+    var chain = call('session', [codeVal()]).then(function () { startPolling(); });
+    if (x.hasPin) chain = chain.then(function () { return sleep(rnd(2000, 5000)); }).then(function () { return call('checkPin', [codeVal(), x.pid, x.pin]); });
+    if (!x.self) {
+      chain = chain.then(function () { return sleep(rnd(20000, 60000)); }).then(function () {
+        var sc = {}; KEYS.forEach(function (k, i) { sc[k] = clamp(x.lvl[i] + x.bias + 0.5 * gauss()); });
+        return call('submitSelf', [codeVal(), x.pid, sc, x.pin]).then(function () { x.self = true; paintProgress(); });
+      });
+    }
+    chain = chain.then(function next() {
+      if (stopped || x.peers.length >= x.target) return;
+      var cand = snap.filter(function (p) { return p.id !== x.pid && !p.ferme && x.peers.indexOf(p.id) === -1; })
+        .sort(function (a, b) { return a.recues - b.recues; }).slice(0, 8);
+      if (!cand.length) return;
+      var pick = cand[Math.floor(Math.random() * cand.length)], tgt = byPid[pick.id];
+      return sleep(rnd(15000, 45000)).then(function () {
+        var sc = {}; KEYS.forEach(function (k, i) { sc[k] = clamp((tgt ? tgt.lvl[i] : 3.6) - 0.6 + 0.7 * gauss()); });
+        return call('submitPeer', [codeVal(), x.tok, pick.id, sc]).then(function () {
+          x.peers.push(pick.id); pick.recues = (pick.recues || 0) + 1; paintProgress();
+        }, function (e) { if (/déjà évalué/.test(e.message)) x.peers.push(pick.id); });
+      }).then(next);
+    });
+    return chain.then(finish, function (e) { finish(); throw e; });
+  }
+
+  resetStats(); refreshIds();
+})();
+</script>
+</body>
+</html>
