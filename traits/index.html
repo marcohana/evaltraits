@@ -37,6 +37,10 @@ body { margin: 0; min-height: 100%; background: var(--paper); color: var(--ink);
 button, input { font: inherit; color: inherit; }
 [hidden] { display: none !important; }
 .num { font-variant-numeric: tabular-nums; }
+.wait { display: flex; gap: 12px; align-items: flex-start; text-align: left; background: var(--accent-soft); color: var(--ink); border-radius: 10px; padding: 12px 14px; font-size: 14.5px; line-height: 1.45; }
+.wait.is-off { background: var(--warn-soft); }
+.wait .dot { flex: none; width: 10px; height: 10px; margin-top: 6px; border-radius: 50%; background: var(--accent); animation: pulse 1.4s ease-in-out infinite; }
+@keyframes pulse { 0%, 100% { opacity: .25; transform: scale(.8); } 50% { opacity: 1; transform: scale(1); } }
 .pin-show { font-size: 44px; font-weight: 700; letter-spacing: .3em; padding-left: .3em; margin: 0 0 14px; font-variant-numeric: tabular-nums; }
 .pin-input { max-width: 180px; margin: 0 auto; display: block; }
 .pin-field { max-width: 120px; text-align: center; font-size: 20px; font-weight: 700; letter-spacing: .3em; }
@@ -201,6 +205,7 @@ h2 { font-size: 20px; line-height: 1.25; margin: 0 0 6px; }
   var MODE = API_URL ? 'http' : 'demo';
   // Aperçu direct (démonstration uniquement) : window.TRAITS_PREVIEW = 'peer' ou 'self'
   var PREVIEW = MODE === 'demo' && (window.TRAITS_PREVIEW === 'peer' || window.TRAITS_PREVIEW === 'self') ? window.TRAITS_PREVIEW : null;
+  var WAIT_MS = typeof window.TRAITS_WAIT_MS === 'number' ? window.TRAITS_WAIT_MS : 8000;
   var CONFIGURED = MODE === 'demo' || /^https:\/\/script\.google\.com\/macros\/s\/[^/]+\/exec\/?$/.test(API_URL);
 
   function call(action, args, key, attempt) {
@@ -288,6 +293,7 @@ h2 { font-size: 20px; line-height: 1.25; margin: 0 0 6px; }
 
   function render() {
     clearInterval(S.timer); S.timer = null;
+    clearInterval(S.waitTimer); S.waitTimer = null;
     foot.innerHTML = '';
     var banner = MODE !== 'demo' ? '' : (PREVIEW
       ? '<div class="demo-banner">Aperçu de l’écran de notation, avec des données fictives. Rien n’est enregistré.</div>'
@@ -338,6 +344,7 @@ h2 { font-size: 20px; line-height: 1.25; margin: 0 0 6px; }
     busy(btn, true, 'Connexion…');
     return call('session', [code]).then(function (sess) {
       S.joining = false;
+      var w = readWait(); if (w && w.code === normCode(code)) del('traits_wait');
       S.code = normCode(code); S.session = sess;
       put('traits_code', S.code);
       var saved = get(K('me'));
@@ -484,27 +491,73 @@ h2 { font-size: 20px; line-height: 1.25; margin: 0 0 6px; }
       var btn = $('#btnReg');
       busy(btn, true, 'Inscription…');
       call('register', [S.reg.code, d]).then(function (res) {
-        S.reg.done = { prenom: res.prenom, pin: d.pin };
+        S.reg.done = { prenom: res.prenom, pin: d.pin, id: res.id };
+        put('traits_wait', JSON.stringify({ code: S.reg.code, id: res.id, pin: d.pin, prenom: res.prenom, info: S.reg.info }));
         render(); window.scrollTo(0, 0);
       }).catch(function (x) { busy(btn, false); showErr($('#errReg'), x.message); });
     });
     $('#rPrenom').focus();
   }
 
+  function readWait() { try { return JSON.parse(get('traits_wait') || 'null'); } catch (e) { return null; } }
+
   function renderRegDone(banner) {
-    var d = S.reg.done, c = S.reg.info.code;
+    var d = S.reg.done, c = S.reg.info.code, code = S.reg.code;
     view.innerHTML = banner + regHead() + '<div class="card center">' +
       '<span class="tag done" style="display:inline-block">Inscription enregistrée</span>' +
       '<h2 style="margin-top:14px">Merci ' + esc(d.prenom) + ' !</h2>' +
       '<p class="lead" style="margin-bottom:14px">Votre mot de passe est</p><div class="pin-show">' + esc(d.pin) + '</div>' +
-      '<p class="lead">Retenez-le : il vous sera demandé avant votre auto-évaluation. Votre enseignant va maintenant ajouter votre nom à la session. Vous pourrez ensuite la rejoindre avec le code <b>' + esc(c) + '</b>.</p>' +
-      '<button type="button" class="btn btn-primary btn-block" id="btnJoinAfter">Rejoindre la session</button></div>';
-    $('#btnJoinAfter').addEventListener('click', function () {
-      var code = S.reg.code;
-      S.reg = null; S.regMode = false;
-      view.innerHTML = '<p class="loading">Connexion à la session…</p>';
-      join(code, null);
-    });
+      '<p class="lead" style="margin-bottom:16px">Retenez-le : il vous sera demandé si vous changez d’appareil.</p>' +
+      '<div class="wait" id="waitBox" role="status" aria-live="polite"></div>' +
+      '<p class="note" id="waitAlt"></p></div>';
+    function setWait(kind) {
+      var box = $('#waitBox'), alt = $('#waitAlt');
+      if (!box) return;
+      if (kind === 'pending') {
+        box.className = 'wait';
+        box.innerHTML = '<span class="dot" aria-hidden="true"></span><span><b>En attente de validation par votre enseignant.</b> Cette page s’ouvrira automatiquement sur votre auto-évaluation dès que votre inscription sera validée. Vous pouvez la laisser ouverte.</span>';
+        alt.innerHTML = '';
+      } else if (kind === 'closed') {
+        box.className = 'wait';
+        box.innerHTML = '<span class="dot" aria-hidden="true"></span><span><b>Votre inscription est validée.</b> L’évaluation n’est pas encore ouverte : cette page s’ouvrira automatiquement dès que votre enseignant l’ouvrira.</span>';
+        alt.innerHTML = '';
+      } else {
+        box.className = 'wait is-off';
+        box.innerHTML = '<span><b>Votre inscription n’a pas été ajoutée à la session.</b> Elle a peut-être été supprimée, ou votre adresse email figurait déjà dans la liste. Adressez-vous à votre enseignant.</span>';
+        alt.innerHTML = 'Votre nom est déjà dans la liste ? <button type="button" class="btn-link" id="btnJoinAfter">Rejoindre la session</button>';
+        $('#btnJoinAfter').addEventListener('click', function () {
+          del('traits_wait'); S.reg = null; S.regMode = false;
+          view.innerHTML = '<p class="loading">Connexion à la session…</p>';
+          join(code, null);
+        });
+      }
+    }
+    function enter(sess) {
+      if (!sess.participants.some(function (p) { return p.id === d.id; })) { setWait('pending'); return; }
+      del('traits_wait');
+      S.code = code; S.session = sess; put('traits_code', code);
+      S.me = d.id; put(K('me'), d.id); put(K('pin'), d.pin);
+      S.reg = null; S.regMode = false; S.sub = 'self'; S.form = null;
+      render(); window.scrollTo(0, 0);
+      toast('Inscription validée : vous pouvez commencer votre auto-évaluation.');
+    }
+    function check() {
+      if (S.checkingWait) return;
+      S.checkingWait = true;
+      call('regStatus', [code, d.id]).then(function (st) {
+        if (st.status === 'pending') { S.checkingWait = false; setWait('pending'); return; }
+        if (st.status === 'accepted') {
+          if (!st.acces) { S.checkingWait = false; setWait('closed'); return; }
+          return call('session', [code]).then(function (sess) { S.checkingWait = false; enter(sess); }, function () { S.checkingWait = false; setWait('closed'); });
+        }
+        S.checkingWait = false;
+        clearInterval(S.waitTimer); S.waitTimer = null;
+        setWait('unknown');
+      }).catch(function () { S.checkingWait = false; });
+    }
+    setWait('pending');
+    S.waitTimer = setInterval(function () { if (!document.hidden) check(); }, WAIT_MS);
+    setTimeout(check, Math.min(1500, WAIT_MS));
   }
 
   // ================= 3. Accueil de l'étudiant =================
@@ -673,7 +726,7 @@ h2 { font-size: 20px; line-height: 1.25; margin: 0 0 6px; }
       ['Gaëlle', 'ROUX'], ['Hugo', 'FOURNIER'], ['Inès', 'GIRARD'], ['Jules', 'BONNET'], ['Karim', 'HADDAD'], ['Léa', 'LAMBERT']];
     var rec = [4, 7, 3, 6, 5, 6, 3, 0, 7, 7, 6, 2];
     var P = names.map(function (n, i) { return { id: 'p' + i, prenom: n[0], nom: n[1], recues: rec[i], auto: i % 4 !== 3, ferme: i === 2, hasPin: i === 4 || i === 11 }; });
-    var PINS = { p4: '47', p11: '12' }, REG = [];
+    var PINS = { p4: '47', p11: '12' }, REG = [], PENDING = {};
     var seen = {};
     function wait(v) { return new Promise(function (r) { setTimeout(function () { r(JSON.parse(JSON.stringify(v))); }, 250); }); }
     function fail(m) { return new Promise(function (_, j) { setTimeout(function () { j(new Error(m)); }, 250); }); }
@@ -684,7 +737,17 @@ h2 { font-size: 20px; line-height: 1.25; margin: 0 0 6px; }
         var em = String(a[1].email).toLowerCase();
         if (REG.indexOf(em) !== -1) return fail('Cette adresse email est déjà inscrite dans cette session. En cas d’erreur, adressez-vous à votre enseignant.');
         REG.push(em);
-        return wait({ ok: true, prenom: a[1].prenom.charAt(0).toUpperCase() + a[1].prenom.slice(1).toLowerCase(), code: '4827' });
+        var rid = 'r' + Date.now().toString(36), pr = a[1].prenom.charAt(0).toUpperCase() + a[1].prenom.slice(1).toLowerCase();
+        PENDING[rid] = { prenom: pr, nom: String(a[1].nom).toUpperCase(), pin: a[1].pin, polls: 0 };
+        return wait({ ok: true, id: rid, prenom: pr, code: '4827' });
+      }
+      if (action === 'regStatus') {
+        var pe = PENDING[a[1]];
+        if (!pe) return wait({ status: P.some(function (x) { return x.id === a[1]; }) ? 'accepted' : 'unknown', acces: true });
+        if (++pe.polls < 2) return wait({ status: 'pending' });
+        P.push({ id: a[1], prenom: pe.prenom, nom: pe.nom, recues: 0, auto: false, ferme: false, hasPin: true });
+        PINS[a[1]] = pe.pin; delete PENDING[a[1]];
+        return wait({ status: 'accepted', acces: true });
       }
       if (action === 'checkPin' || (action === 'submitSelf' && PINS[a[1]])) {
         var pid = a[1], given = action === 'checkPin' ? a[2] : a[3];
@@ -715,6 +778,13 @@ h2 { font-size: 20px; line-height: 1.25; margin: 0 0 6px; }
   var urlCode = normCode(params.get('code'));
   var regCode = normCode(params.get('inscription'));
   if (!CONFIGURED) { render(); return; }
+  var waiting = readWait();
+  if (waiting && waiting.id && (regCode === waiting.code || urlCode === waiting.code || (!regCode && !urlCode))) {
+    S.regMode = true;
+    S.reg = { code: waiting.code, info: waiting.info, done: { prenom: waiting.prenom, pin: waiting.pin, id: waiting.id } };
+    render();
+    return;
+  }
   if (regCode.length === 4 || params.has('inscription')) {
     S.regMode = true;
     if (regCode.length === 4) { view.innerHTML = '<p class="loading">Ouverture de l’inscription…</p>'; openReg(regCode, null); }
